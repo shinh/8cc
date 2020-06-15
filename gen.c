@@ -119,11 +119,8 @@ static void emit_nostack(char *fmt, ...) {
 
 static void push(char *reg) {
     SAVE;
-    assert(strcmp(reg, "D"));
-    emit("mov D, SP");
-    emit("add D, -1");
-    emit("store %s, D", reg);
-    emit("mov SP, D");
+    emit("add SP, -1");
+    emit("store %s, SP", reg);
     stackpos += 1;
 }
 
@@ -248,10 +245,7 @@ static void emit_lsave(Type *ty, int off) {
 
 static void do_emit_assign_deref(Type *ty, int off) {
     SAVE;
-    emit("mov C, A");
-    emit("load A, SP");
-    emit("mov B, A");
-    emit("mov A, C");
+    emit("load B, SP");
     if (off)
         emit("add A, %d", MOD24(off));
     emit("store B, A");
@@ -292,10 +286,7 @@ static void emit_pointer_arith(char kind, Node *left, Node *right) {
     case '-': emit("sub A, B"); break;
     default: error("invalid operator '%d'", kind);
     }
-    emit("mov C, A");
-    pop("A");
-    emit("mov B, A");
-    emit("mov A, C");
+    pop("B");
 }
 
 static void emit_zero_filler(int start, int end) {
@@ -470,8 +461,7 @@ static void emit_ret() {
         emit("exit");
     } else {
         emit("mov SP, BP");
-        pop("A");
-        emit("mov BP, A");
+        pop("BP");
         pop("A");
         emit("jmp A");
         stackpos += 2;
@@ -556,8 +546,7 @@ static void emit_copy_struct(Node *left, Node *right) {
     push("A");
     emit_addr(left);
     emit("mov C, A");
-    pop("A");
-    emit("mov B, A");
+    pop("B");
     int i = 0;
     for (; i < left->ty->size; i++) {
         emit("load A, B");
@@ -565,10 +554,8 @@ static void emit_copy_struct(Node *left, Node *right) {
         emit("add B, 1");
         emit("add C, 1");
     }
-    pop("A");
-    emit("mov C, A");
-    pop("A");
-    emit("mov B, A");
+    pop("C");
+    pop("B");
 }
 
 static int cmpinit(const void *x, const void *y) {
